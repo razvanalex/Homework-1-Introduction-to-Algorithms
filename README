@@ -1,0 +1,233 @@
+-------------------------------------------------------------------------------
+                                Tema 1 - PA
+-------------------------------------------------------------------------------
+
+AUTOR: Smadu Razvan-Alexandru  325CB
+
+FISIERE INCLUSE
+  - Frati.java
+  - Ursi.java
+  - Planificare.java
+  - Numaratoare.java
+  - Makefile
+  - README
+
+README
+  1. Frati
+    Metoda de rezolvare este alegerea greedy dintr-o lista sortata. Pentru a
+    creste eficienta sortarii, am folosit un TreeMap in care sunt puse perechile
+    sub forma de array-uri de dimensiune 2 (indicele 0 inseamna jocuri video,
+    indicele 1 inseamna benzi desenate). Perechile sunt grupate in 
+    ArrayList-uri, toate perechile dintr-un ArrayList avand proprietatea: 
+
+        key = j1 + b1,      unde j1 si b1 sunt elementele perechii (j1, b1)
+
+    TreeMap-ul o sa retina ArrayList-uri cu proprietatea de mai sus, sortate 
+    descrescator dupa key, avand intelesul ca prima cheie reprezita alegerile
+    cele mai nefavorabile, iar ultima cheie este cea mai favorabila alegere.
+    In cadrul aceleiasi chei (acelasi ArrayList), perechile sunt sortate 
+    descrescator dupa prima valoare si, in caz de egalitate, dupa a doua 
+    valoare. Prin urmare, prima pereche o sa fie cea mai favorabila alegere a 
+    lui Jon, iar ultima pereche o sa fie cea mai favorabila pentru Sam (aceasta
+    si datorita faptului ca toate perechile au aceeasi suma).
+
+    Algoritmul de alegere (presupunand ca TreeMap-ul este populat cu valori si 
+    s-a realizat sortarea):
+      1. Se alege cea mai buna pereche a lui Jon si cea mai buna pereche a lui 
+         Sam;
+      2. Cat timp exista valori in TreeMap (s-au facut mai putin de N-1 alegeri)
+          a) In cazul in care este ultima alegere, oricare dintre cei doi va 
+             trebui sa aleaga perechea sortata.
+          b) Se calculeaza diferenta celor 2 perechi cu formula: 
+              diff = (maxSam.1 - maxJon.0) - (maxJon.1 - maxSam.0)
+            Care are semnificatia: Care pereche este mai profitabila dupa ce s-a
+            facut alegerea?
+          c) Daca diferenta este negativa, inseamna ca perechea mai buna a lui 
+             Jon trebuie aleasa;
+             Altfel Daca diferenta este pozitiva, perechea lui Sam trebuie 
+             aleasa;
+             Altfel (in caz de egalitate) fratele isi va alege solutia care 
+             maximizeaza numarul de obiecte preferate;
+    
+    Complexitate:
+      Worst case:
+        Functia addToTreeMap() are complexitatea: 
+              O(log N) + O(V) + O(log N) = O(V + log N) = O(N), 
+                unde V - dimensiunea maxima a unei liste din TreeMap
+                     N - numarul de perechi citite
+              (worst case fie pentru fiecare pereche sa atribuie o cheie, fie
+              toate perechile sunt in aceeasi cheie)
+
+        Functia readData() are complexitatea: O(N)
+
+        Functia getNext() are complexitatea: 
+            O(log N) + O(1) + O(V) + O(log N) = O(V + log N)
+
+        Functia sortTreeMap() are complexitatea:
+            O(K * V log V) = O(N log N) (worst case, sortarea unei liste)
+        
+        Functia getResult() are complexitatea:
+            O(N log N) + O(N) + O(N) = O(N log N) 
+            (sortarea dicteaza complexitatea algoritmului. For-ul se executa in
+            O(N) deoarece este o simpla parcurgere intr-o ordine care nu este 
+            bine definita).
+      
+      Best Case:
+        Complexitatea temporala este O(N) deoarece sortarea unui sir gata 
+        ordonat este O(N) [3], iar alegerile se vor face liniar.
+
+      Complexitatea spatiala: O(N) (reuniunea tuturor listelor vor da 
+      lista initiala, iar numarul de chei poate creste, worst case, liniar)
+
+
+  2. Ursi
+    Metoda de rezolvare pentru aceasta problema este programarea dinamica. 
+    Formalizarea problemei ar fi urmatoarea: 
+      Fie un sir de caractere C = c1, c2, c3, ..., cn , unde n reprezinta 
+      numarul de caractere din sir, iar ci = { ^, _ }. Sa se gaseasca numarul de 
+      partitionari in care fetele sunt de forma ^_ ... _^, unde numarul de "_" 
+      poate fi 0 sau mai mult.
+
+    Fiind o problema in care sunt implicate liste (siruri de elemente), 
+    abordarea aleasa a fost cu sufixe: Stiind solutia pentru primele i-1 
+    elemente, care este solutia pentru i. Deoarece trebuie luate in considerare 
+    doar solutiile care incep cu ^ (o solutie care incepe cu _ este una 
+    invalida), va interesa cate inceperi de fete zambitoare avem. Prin urmare, 
+    dinamica ar fi urmatoarea alegere:
+      dp[i][d] -> numarul de partitionari a sirului c1, c2, ..., ci in care avem
+                  d fete zambitoare incepute.
+    
+    Evident, solutia problemei va fi d[n][0], intrucat vrem sa avem toate 
+    caracterele implicate, si sa nu avem nicio fata inceputa si neterminata.
+
+    Constructia recurentei:
+    Atunci cand avem ci = ^, din definitia pentru dinamica aleasa, avem 2 cazuri
+    de tratat: 
+      a) Cand caracterul ci termina setul de fete zambitoare incepute.
+        In acest caz, fiecare ^ se poate grupa cu ci. Daca indicele ci > (d+1),
+        rezultatul va fi 0, pentru ca nu este posibila o astfel de fata. Prin
+        urmare, partionarile sunt in numar de (d+1) * numar_partitionari_D+1.
+      b) Cand caracterul ci incepe un nou set de fete zambitoare.
+        In acest caz, numarul ramane constant de partitionat (adica aceeasi 
+        valoare ca la numarul anterior de ^ si automat si de caractere)
+    Atunci cand ci = _, acest caracter va creste numarul de partitionari curent 
+    cu numarul de inceperi ori, numarul anterior de partitionari (adica
+    fiecare fata pana la punctul curent poate fi combinata cu acel _)
+
+    Prin urmare, dinamica va fi urmatoarea:
+      dp[i][d] =  | d * dp[i - 1][d],                               ci == _
+                  | (d + 1) * dp[i - 1][d + 1],                     ci == ^ && d < #(^) - 1
+                  | dp[i - 1][d - 1],                               ci == ^ && d >= 1
+                  | (d + 1) * dp[i - 1][d + 1] + dp[i - 1][d - 1],  ci == ^ && altfel
+                  | 1,                                              i == 0 && d == 0
+                  | 0,                                              i == 0 && d > 0
+
+    Nota: - #(^) inseamna numarul de ^ din sirul initial.
+          - Cazul de baza este inclus in recurenta (ultimele 2 linii).
+          - Sirul incepe de caractere incepe de la i = 1, c0 nu exista.
+
+    Algoritmul consta in parcurgerea matricei (care se face de sus in jos si de 
+    la stanga la dreapta) si completarea acesteia cu valori, conform recurentei.
+
+    Complexitatea algoritmului:
+      Complexitatea temporala: O(size * count) unde size reprezinta numarul de 
+        caractere din sir, iar count reprezinta numarul de ^ din sir.
+
+      Complexitatea spatiala: O(size * count) - dimensiunea matricei.
+
+
+  3. Planificare
+    Metoda de rezolvare la aceasta problema este programarea dinamica.
+    Fiind o problema in care trebuie determinat optimul dintr-un string, am ales
+    abordarea cu prefixe.
+
+    Voi defini dinamica dp[i] -> cea mai mica pierdere totala pentru 
+    concursurile formate din probele de la 0 la i.
+
+    Pentru fiecare alegere de elemente succesive se poate calcula pierderea 
+    astfel (in codul sursa am notat-o cu pa -> pierdera asociata elementelor de 
+    la i la j, cu i <= j):
+                 _
+                |  _                __j_                _  3
+                | |                 \                    | 
+    pa[i][j] = <  | D - durate[i] - /___ (B + durate[k]) |   , daca pa[i][j] >= 0
+                | |_                k=i+1               _|
+                |
+                |_INFINIT                                    , daca pa[i][j] < 0
+
+    Avand aceste valori calculate, recurenta devine urmatoarea:
+      dp[i] =  min   { dp[j] + pa[i][j - 1] } 
+             j=i+1,P
+    
+    Recurenta este intuitiva, deoarece terbuie calculate toate pierderile totale
+    pentru toate gruparile si luata solutia care este minima.
+
+    Pentru a calcula si numarul de concursuri, trebuie sa se retina la fiecare 
+    alegere de minim si indexul pentru valoare minima aleasa. In cod, sunt 
+    retinute in vectorul backPath. La final se parcurge in ordine vectorul, de 
+    la primul element, iar apoi se sare la valoare care e indicata pe pozitia 
+    curenta. Astfel se poate determina si care sunt gruparile in probe.
+    
+    Pentru a calcula dp[i], trebuie cunoscute valorile de la i+1 la P (adica 
+    prefixul).
+
+    Complexitatea algoritmului:
+      Complexitatea temporala: O(P^2) -> se parcurge jumatate din matricea pa in
+      timput calcularii lui dp.
+
+      Complexitatea spatiala: O(P^2), fiind data de matricea in care se retin
+      pierderile asociate concursurilor.
+
+
+  4. Numaratoare
+    Aceasta problema am facut-o cu backtracking si programare dinamica (fara 
+    partea de memoizare)
+
+    Dinamica la aceasta problema este simpla: dp[i][j] reprezinta multimea 
+    solutiilor care dau suma i si contine j elemente.
+
+    Recurenta este urmatoarea: 
+      dp[i][j] = {ci} + dp[i - ci][j- 1], unde ci = { i-j+1, i-j, ..., 1 }
+      iar cazul de baza este: dp[1][1] = {1}
+
+    Explicatie: Cand se alege cifra cea mai mare pentru pozitia 0. Atunci restul
+    elementelor formeaza multimea dp[i - ci][j - 1] intrucat suma lor este ce
+    a ramas dupa alegere, iar numarul de numere este j - 1.
+
+    Pentru generarea corecta, prima cifra din dp[i - ci] trebuie sa fie mai mica
+    decat ci (altfel se genereaza aranjamente).
+
+    Algoritmul este unul de backtracking pentru generarea tuturor solutiilor:
+      - se aleg toate cifrele din multimea { i-j+1, i-j, ..., 1 }, pe rand.
+      - se pune in multimea solutiei curente.
+      - daca nu se respecta conditia de unicitate a solutiei (fara aranjamente)
+        atunci se trece la urmatoarea cifra
+      - altfel, se apeleaza recursiv functia bkt() cu noii parametrii descrisi 
+        de recurenta.
+      - conditia de oprire este atunci cand nu mai sunt elemente de pus (j = 0),
+        suma este 0 (i = 0) si in acest caz se adauga solutia curenta la lista 
+        de solutii, sau s-a ajuns la numarul i cerut.
+
+    Pentru scaderea timului de executie, se poate aplica procedeul de memoizare
+    pentru valorile deja calculate. 
+
+    Nota: Cu "+" este notata reuniunea multimilor, iar "=" de la ci = { i-j+1, 
+          i-j, ..., 1 } este notata apartenenta.
+
+    Complexitatea algoritmului:
+      Complexitatea temporala: o((S-N)^N) - care nu se va atinge practic 
+        niciodata, datorita optimizarilor. Maxim sunt S-N numere pentru c_i, si 
+        pentru fiecare se intra in recursivitate de N ori (adancimea arborelui 
+        de solutii).
+
+      Complexitatea spatiala: O(min { I, (S-N)^N }) -> deoarece daca I este o 
+      valoare la care se poate ajunge, atunci este O(I). Alftel se genereaza
+      toate solutiile, deci O((S-N)^N).
+
+      Cu memoizare se poate ajunge si la o solutie polinomiala.
+
+
+REFERINTA
+  [1] https://docs.oracle.com/javase/8/docs/api/java/util/TreeMap.html
+  [2] https://gist.github.com/psayre23/c30a821239f4818b0709
+  [3] https://en.wikipedia.org/wiki/Timsort
